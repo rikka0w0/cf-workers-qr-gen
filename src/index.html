@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>QR Generator</title>
+</head>
+<body>
+	<p>API Usage (GET): /?qr_text=URL_ENCODED_TEXT</p>
+	<input type="text" id="text" value="Replace me" style="width: 100%;" />
+	<button onclick="generate()">Generate QR Code</button>
+	<p />
+	<img id="qr" src="#" hidden/>
+	<script>
+		function generate() {
+			const text = document.querySelector("#text").value;
+			const queryURL = window.location.pathname + "?qr_text=" + encodeURIComponent(text);
+			fetch(queryURL, {
+				method: "GET",
+				headers: { "Content-Type": "text/plain" }
+			})
+				.then(response => response.blob())
+				.then(blob => {
+					const reader = new FileReader();
+					reader.onloadend = function () {
+						const qrElement = document.querySelector("#qr");
+						qrElement.src = reader.result;
+						qrElement.hidden = false;
+					}
+					reader.readAsDataURL(blob);
+				})
+		}
+	</script>
+</body>
+</html>
