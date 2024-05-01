@@ -8,25 +8,49 @@
 	<input type="text" id="text" value="Replace me" style="width: 100%;" />
 	<button onclick="generate()">Generate QR Code</button>
 	<p />
-	<img id="qr" src="#" hidden/>
+	<div id="qr_div" />
 	<script>
+		function loadScript(url) {
+			return new Promise((resolve, reject) => {
+				var script = document.createElement("script");
+				script.type = "text/javascript";
+
+				script.onload = () => resolve();
+				script.onerror = () => reject(new Error(`Failed to load script: ${url}`));
+
+				script.src = url;
+				document.getElementsByTagName("head")[0].appendChild(script);
+			});
+		}
+
 		function generate() {
 			const text = document.querySelector("#text").value;
 			const queryURL = window.location.pathname + "?qr_text=" + encodeURIComponent(text);
+			const qrDiv = document.querySelector("#qr_div");
+			qrDiv.innerHTML = '';
+
+			// First, try to use the online QR code generation service.
 			fetch(queryURL, {
 				method: "GET",
 				headers: { "Content-Type": "text/plain" }
-			})
-				.then(response => response.blob())
-				.then(blob => {
-					const reader = new FileReader();
-					reader.onloadend = function () {
-						const qrElement = document.querySelector("#qr");
-						qrElement.src = reader.result;
-						qrElement.hidden = false;
-					}
-					reader.readAsDataURL(blob);
-				})
+			}).then(async (response) => {
+				const blob = await response.blob();
+				const reader = new FileReader();
+				reader.onloadend = function () {
+					const qrImg = document.createElement("img");
+					qrImg.src = reader.result;
+					qrDiv.appendChild(qrImg);
+				}
+				reader.readAsDataURL(blob);
+			}, async () => {
+				// Generate QR code on client's browser.
+				await loadScript("https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.js");
+				new QRCode(qrDiv, {
+						text: text,
+						correctLevel: QRCode.CorrectLevel.M,
+					});
+					qrDiv.hidden = false;
+			});
 		}
 	</script>
 </body>
